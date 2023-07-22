@@ -5,6 +5,7 @@ import upickle.TestUtil._
 import upickle.default.{read, write, ReadWriter => RW}
 
 case class Trivial(a: Int = 1)
+
 case class KeyedPerson(
                    @upickle.implicits.key("first_name") firstName: String = "N/A",
                    @upickle.implicits.key("last_name") lastName: String)
@@ -29,7 +30,7 @@ object Custom {
 
   abstract class ThingBaseCompanion[T <: ThingBase](f: (Int, String) => T){
     implicit val thing2Writer: RW[T] = upickle.default.readwriter[String].bimap[T](
-      t => t.i + " " + t.s,
+      t => s"${t.i} ${t.s}",
       str => {
         val Array(i, s) = str.toString.split(" ", 2)
         f(i.toInt, s)
@@ -168,7 +169,7 @@ object MacroTests extends TestSuite {
         )
         val chunks = for (i <- 1 to 18) yield {
           val rhs = if (i % 2 == 1) "1" else "\"1\""
-          val lhs = '"' + s"t$i" + '"'
+          val lhs = s""""t$i""""
           s"$lhs:$rhs"
         }
 
@@ -552,9 +553,9 @@ object MacroTests extends TestSuite {
 
     }
     test("defaultkeyregression"){
-
-      val json = """{"last_name": "Snow"}"""
+      val json = """{"last_name":"Snow"}"""
       upickle.default.read[KeyedPerson](json) ==> KeyedPerson("N/A", "Snow")
+      upickle.default.write[KeyedPerson](KeyedPerson("N/A", "Snow")) ==> json
     }
 
     test("specialchars"){
@@ -565,4 +566,3 @@ object MacroTests extends TestSuite {
     }
   }
 }
-
